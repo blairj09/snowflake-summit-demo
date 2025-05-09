@@ -4,9 +4,11 @@ format: html
 ---
 
 ```{python}
+import os
 import polars as pl
 import plotly.express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from distutils.util import strtobool
 from dotenv import load_dotenv
 
@@ -17,17 +19,18 @@ This document explores the Air Quality dataset available through the Snowflake M
 ## EDA
 Connect to data, either directly via Snowflake or using a local data extract
 ```{python}
-snowflake_enabled = bool(strtobool(os.getenv('SNOWFLAKE', 'False')))
+data_path = "dashboard/python/data/air_quality.csv"
+snowflake_enabled = True
 if snowflake_enabled:
     import snowflake.connector
     conn = snowflake.connector.connect()
     cur = conn.cursor()
     cur.execute("SELECT * FROM AIR_QUALITY_DATA_UNITED_STATES.PUBLIC.AIR_QUALITY")
     df = cur.fetch_pandas_all()
-    df.to_csv("dashboard/data/air_quality.csv")
+    df.to_csv(data_path)
+    df = pl.from_dataframe(df)
 else:
-    import polars as pl
-    df = pl.read_csv("dashboard/python/data/air_quality.csv", infer_schema_length=300000)
+    df = pl.read_csv(data_path, infer_schema_length=300000)
 ```
 
 What unique values of SAMPLEDURATION exist in the data?
@@ -69,8 +72,6 @@ df_24hr_obs.group_by('YEAR').agg(pl.len()).sort('YEAR')
 
 What locations do we have in the data?
 ```{python}
-import matplotlib.pyplot as plt
-
 # Get unique lat/lon combinations
 unique_locations = df_24hr.select(['LATITUDE', 'LONGITUDE']).unique()
 

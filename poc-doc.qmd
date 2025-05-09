@@ -37,6 +37,46 @@ cur.execute("SELECT * FROM AIR_QUALITY_DATA_UNITED_STATES.PUBLIC.AIR_QUALITY")
 df = cur.fetch_pandas_all()
 ```
 
+## SQLAlchemy
+Can SQLAlchemy use the OAuth configuration? Documentation suggests username and password are required parameters
+
+```{python}
+import os
+from sqlalchemy import create_engine, text
+
+account = os.getenv("SNOWFLAKE_ACCOUNT")
+engine = create_engine(f"snowflake://{account}/?connection_name=workbench")
+
+with engine.connect() as conn:
+    print(conn.execute(text("SELECT current_version()")).fetchall())
+```
+
+Now let's connect to an actual dataset via SQLAlchemy
+
+```{python}
+# This works as expected
+with engine.connect() as conn:
+    print(conn.execute(text("SELECT * FROM AIR_QUALITY_DATA_UNITED_STATES.PUBLIC.AIR_QUALITY LIMIT 10")).fetchall())
+```
+
+Now to create a specific connection in the engine itself
+```{python}
+from sqlalchemy import create_engine, text
+from snowflake.sqlalchemy import URL
+engine = create_engine(URL(
+    account = account,
+    connection_name = "workbench",
+    database = "AIR_QUALITY_DATA_UNITED_STATES",
+    schema = "PUBLIC",
+    warehouse = "DEFAULT_WH",
+    role = "DEVELOPER"
+))
+
+with engine.connect() as conn:
+    print(conn.execute(text("SELECT * FROM AIR_QUALITY LIMIT 10")).fetchall())
+```
+
+
 # Gen AI
 ## Elmer
 
